@@ -1,17 +1,15 @@
-"use client"
-import {motion} from "motion/react";
-const box = {
-    width: '100px',
-    height: "100px",
-    backgroundColor: "#fff",
-    borderRadius: 5,
-}
 export default function Home() {
   return (
-    <motion.div
-        style={box}
-        animate={{ rotate: 360 }}
-        transition={{ duration: 3 }}
-    />
+    <div className="h-screen w-screen">
+      <div className="bg-amber-400 h-20 w-350 top-15 left-15 absolute">
+
+      </div>
+      <div className="bg-amber-300 h-150 w-20 top-15 left-15 absolute">
+
+      </div>
+      <div className="bg-amber-200 h-20 w-20 [clip-path:polygon(0%_0%,100%_0%,50%_100%)] top-165 left-15 absolute">
+
+      </div>
+    </div>
   );
 }
