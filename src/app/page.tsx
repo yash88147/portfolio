@@ -1,6 +1,6 @@
 export default function Home() {
   return (
-    <div className="h-screen w-screen">
+    <div className="h-screen w-screen bg-black">
       <div className="bg-amber-400 h-20 w-350 top-15 left-15 absolute">
 
       </div>
