@@ -1,4 +1,4 @@
-export default function HeroSection() {
+export default function HeroSection({onExplore} : {onExplore:() => void}) {
   return (
     <div className="flex flex-col items-start justify-center h-full space-y-6">
       <span className="px-3 py-1 text-xs font-semibold tracking-widest uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded-full">
