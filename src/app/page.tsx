@@ -9,6 +9,7 @@ import AboutSection from "./components/about";
 import ProjectsGrid from "./components/project-grid";
 import SkillsSection from "./components/section";
 import ContactForm from "./components/contact";
+import SpaceTimeGrid from "./components/SpaceTimeGrid";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -24,14 +25,17 @@ export default function Home() {
   const mainWrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const arrowRef = useRef<HTMLDivElement>(null);
+  const arrowInnerRef = useRef<HTMLDivElement>(null);
   const tlRef = useRef<gsap.core.Timeline | null>(null);
 
-  // Smoothly scrubs through all intermediate GSAP animations to reach the target section
   const scrollToSection = (targetIndex: number) => {
     const tl = tlRef.current;
     if (!tl || !tl.scrollTrigger) return;
 
-    const targetScrollY = tl.scrollTrigger.labelToScroll(`page-${targetIndex}`);
+    const clampedIndex = targetIndex % NAV_ITEMS.length;
+    const targetScrollY = tl.scrollTrigger.labelToScroll(
+      `page-${clampedIndex}`
+    );
     const scrollProxy = { y: window.scrollY };
 
     gsap.to(scrollProxy, {
@@ -45,12 +49,29 @@ export default function Home() {
     });
   };
 
+  const handleAdvanceNextPage = () => {
+    const tl = tlRef.current;
+    if (!tl || !tl.scrollTrigger) return;
+
+    const totalTransitions = NAV_ITEMS.length - 1;
+    const currentPageIndex = Math.round(
+      tl.scrollTrigger.progress * totalTransitions
+    );
+    const nextIndex = (currentPageIndex + 1) % NAV_ITEMS.length;
+    scrollToSection(nextIndex);
+  };
+
   const PAGES = [
     {
       id: "hero",
       hBarColor: "bg-cyan-500",
       vBarColor: "bg-emerald-500",
-      component: <HeroSection onExplore={() => scrollToSection(2)} />,
+      component: (
+        <HeroSection
+          onExplore={() => scrollToSection(1)}
+          onContact={() => scrollToSection(4)}
+        />
+      ),
     },
     {
       id: "about",
@@ -62,7 +83,7 @@ export default function Home() {
       id: "projects",
       hBarColor: "bg-red-600",
       vBarColor: "bg-amber-500",
-      component: <ProjectsGrid />,
+      component: <ProjectsGrid onContact={() => scrollToSection(4)} />,
     },
     {
       id: "skills",
@@ -97,32 +118,29 @@ export default function Home() {
 
       tlRef.current = tl;
 
-      // Mark initial resting position for Page 0 (Home)
       tl.addLabel("page-0", 0);
 
       for (let i = 0; i < totalTransitions; i++) {
-        const isEvenStep = i % 2 === 0; // true: Left -> Right | false: Right -> Left
+        const isEvenStep = i % 2 === 0;
         const curr = i;
         const next = i + 1;
 
-        // 1. Rotate arrow to point toward the opposite side
         tl.to(arrowRef.current, {
           rotation: isEvenStep ? -90 : 90,
           duration: 1,
           delay: 1,
         })
-          // 2. Slide current vertical bar up
           .fromTo(
             `.v-bar-${curr}`,
-            { y: "0vh" },
+            { y: "0vh", pointerEvents: "auto" },
             {
               y: "-80vh",
+              pointerEvents: "none",
               duration: 8,
               immediateRender: false,
             },
             ">"
           )
-          // Slide current page content up AND disable pointer-events
           .fromTo(
             `.page-content-${curr}`,
             { y: "0vh", autoAlpha: 1, pointerEvents: "auto" },
@@ -135,7 +153,6 @@ export default function Home() {
             },
             "<"
           )
-          // Slide current horizontal navbar up and disable clicks while leaving
           .fromTo(
             `.h-bar-${curr}`,
             { y: curr === 0 ? "0vh" : "-80vh", pointerEvents: "auto" },
@@ -147,7 +164,6 @@ export default function Home() {
             },
             "<"
           )
-          // Slide arrow and emerging horizontal navbar up from bottom (85vh) to top (5vh)
           .fromTo(
             [arrowRef.current, `.h-bar-${next}`],
             { y: "0vh" },
@@ -158,7 +174,6 @@ export default function Home() {
             },
             "<"
           )
-          // Move arrow horizontally across the responsive screen width
           .to(
             arrowRef.current,
             {
@@ -167,7 +182,6 @@ export default function Home() {
             },
             "<"
           )
-          // Emerge next horizontal navbar using clipPath so nav text never stretches
           .fromTo(
             `.h-bar-${next}`,
             {
@@ -184,7 +198,6 @@ export default function Home() {
             },
             "<"
           )
-          // Vanish current horizontal navbar using clipPath
           .fromTo(
             `.h-bar-${curr}`,
             { clipPath: "inset(0% 0% 0% 0%)" },
@@ -197,21 +210,20 @@ export default function Home() {
             },
             "<"
           )
-          // 3. Rotate arrow downward (0 deg)
           .to(arrowRef.current, {
             rotation: 0,
             duration: 1,
           })
-          // 4. Move arrow down to bottom corner while new vertical bar emerges & old vertical bar vanishes
           .to(arrowRef.current, {
             y: "0vh",
             duration: 4,
           })
           .fromTo(
             `.v-bar-${next}`,
-            { scaleY: 0 },
+            { scaleY: 0, pointerEvents: "none" },
             {
               scaleY: 1,
+              pointerEvents: "auto",
               transformOrigin: "top center",
               duration: 4,
               immediateRender: true,
@@ -222,12 +234,12 @@ export default function Home() {
             `.v-bar-${curr}`,
             {
               scaleY: 0,
+              pointerEvents: "none",
               transformOrigin: "center bottom",
               duration: 4,
             },
             "<"
           )
-          // 5. Reveal next page content and enable pointer-events
           .fromTo(
             `.page-content-${next}`,
             {
@@ -244,7 +256,6 @@ export default function Home() {
             },
             "<"
           )
-          // Mark resting position for this page so navbar buttons can scrub directly here
           .addLabel(`page-${next}`);
       }
     },
@@ -252,24 +263,24 @@ export default function Home() {
   );
 
   return (
-    <div ref={mainWrapperRef} className="w-full bg-black">
+    <div ref={mainWrapperRef} className="w-full bg-black ">
       <div
         ref={containerRef}
         className="relative h-screen w-screen bg-black overflow-hidden"
       >
+        {/* Background Space-Time Grid (z-0, pointer-events-none) */}
+        <SpaceTimeGrid />
         {PAGES.map((page, index) => {
           const isFirst = index === 0;
           const isEvenIndex = index % 2 === 0;
 
-          // Even index pages (0, 2, 4): Home -> About -> Project -> Tech Stack -> Contact Me
-          // Odd index pages (1, 3): Contact Me -> Tech Stack -> Project -> About -> Home
           const orderedNavItems = isEvenIndex
             ? NAV_ITEMS
             : [...NAV_ITEMS].reverse();
 
           return (
             <div key={page.id}>
-              {/* Top Horizontal Bar Acting as Interactive Navbar */}
+              {/* Top Horizontal Bar Acting as Interactive Navbar (Sharp Corners) */}
               <nav
                 className={`h-bar-${index} ${
                   page.hBarColor
@@ -299,9 +310,15 @@ export default function Home() {
                 })}
               </nav>
 
-              {/* Responsive Vertical Bar */}
+              {/* Clickable Vertical Bar (Sharp Corners) */}
               <div
-                className={`v-bar-${index} ${page.vBarColor} h-[80vh] w-[10vh] top-[5vh] pointer-events-none z-20 ${
+                onClick={() => scrollToSection((index + 1) % PAGES.length)}
+                title="Click to go to next section"
+                className={`v-bar-${index} ${
+                  page.vBarColor
+                } h-[80vh] w-[10vh] top-[5vh] z-20 cursor-pointer hover:brightness-110 transition-[filter] ${
+                  isFirst ? "pointer-events-auto" : "pointer-events-none"
+                } ${
                   isEvenIndex ? "left-[5vh]" : "left-[calc(100vw-15vh)]"
                 } absolute`}
               />
@@ -320,11 +337,18 @@ export default function Home() {
           );
         })}
 
-        {/* Shared Violet Arrow Cursor */}
+        {/* Clickable Sharp Violet Arrow Cursor with Gentle Ribbon Oscillation */}
         <div
           ref={arrowRef}
-          className="z-30 pointer-events-none bg-violet-500 h-[10vh] w-[10vh] [clip-path:polygon(0%_0%,100%_0%,50%_100%)] top-[85vh] left-[5vh] absolute"
-        />
+          onClick={handleAdvanceNextPage}
+          title="Click for next section"
+          className="z-30 cursor-pointer h-[10vh] w-[10vh] top-[85vh] left-[5vh] absolute"
+        >
+          <div
+            ref={arrowInnerRef}
+            className="w-full h-full bg-violet-500 hover:bg-violet-400 transition-colors [clip-path:polygon(0%_0%,100%_0%,50%_100%)]"
+          />
+        </div>
       </div>
     </div>
   );
